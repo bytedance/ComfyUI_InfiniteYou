@@ -15,16 +15,30 @@
 import torch
 import numpy as np
 from insightface.utils import face_align
+from facexlib.utils import load_file_from_url
+from facexlib.recognition import arcface_arch
 from PIL import Image
 import math
 import cv2
 
-def extract_arcface_bgr_embedding(in_image, landmark, arcface_model, in_settings=None):
+ARCFACE_MODEL_URL = 'https://github.com/xinntao/facexlib/releases/download/v0.1.0/recognition_arcface_ir_se50.pth'
+
+def init_arcface_model(device='cuda'):
+    model = arcface_arch.Backbone(num_layers=50, drop_ratio=0.6, mode='ir_se').to(device).eval()
+    model_url = 'https://github.com/xinntao/facexlib/releases/download/v0.1.0/recognition_arcface_ir_se50.pth'
+
+    model_path = load_file_from_url(url=ARCFACE_MODEL_URL, model_dir='facexlib/weights')
+    model.load_state_dict(torch.load(model_path, map_location=device), strict=True)
+    model.eval()
+    model = model.to(device)
+    return model
+
+def extract_arcface_bgr_embedding(in_image, landmark, arcface_model, in_settings=None, device='cuda'):
     kps = landmark
     arc_face_image = face_align.norm_crop(in_image, landmark=np.array(kps), image_size=112)
     arc_face_image = torch.from_numpy(arc_face_image).unsqueeze(0).permute(0,3,1,2) / 255.
     arc_face_image = 2 * arc_face_image - 1
-    arc_face_image = arc_face_image.cuda().contiguous()
+    arc_face_image = arc_face_image.to(device).contiguous()
     face_emb = arcface_model(arc_face_image)[0] # [512], normalized
     return face_emb
 
