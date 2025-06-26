@@ -25,7 +25,6 @@ ARCFACE_MODEL_URL = 'https://github.com/xinntao/facexlib/releases/download/v0.1.
 
 def init_arcface_model(device='cuda'):
     model = arcface_arch.Backbone(num_layers=50, drop_ratio=0.6, mode='ir_se').to(device).eval()
-    model_url = 'https://github.com/xinntao/facexlib/releases/download/v0.1.0/recognition_arcface_ir_se50.pth'
 
     model_path = load_file_from_url(url=ARCFACE_MODEL_URL, model_dir='facexlib/weights')
     model.load_state_dict(torch.load(model_path, map_location=device), strict=True)
