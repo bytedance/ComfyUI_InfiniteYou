@@ -23,10 +23,9 @@ from huggingface_hub import snapshot_download, hf_hub_download
 import shutil
 import glob
 
-from facexlib.recognition import init_recognition_model
 from insightface.app import FaceAnalysis
 
-from .utils import extract_arcface_bgr_embedding, tensor_to_np_image, np_image_to_tensor, resize_and_pad_pil_image, draw_kps, escape_path_for_url
+from .utils import extract_arcface_bgr_embedding, tensor_to_np_image, np_image_to_tensor, resize_and_pad_pil_image, draw_kps, escape_path_for_url, init_arcface_model
 from .infuse_net import load_infuse_net_flux
 from .resampler import Resampler
 
@@ -110,7 +109,7 @@ class IDEmbeddingModelLoader:
         device = comfy.model_management.get_torch_device()
 
         # Load arcface model
-        arcface_model = init_recognition_model('arcface', device=device)
+        arcface_model = init_arcface_model(device=device)
 
          # Load image proj model
         image_emb_dim = 512
@@ -197,8 +196,8 @@ class ExtractIDEmbedding:
 
         face_info = sorted(face_info, key=lambda x:(x['bbox'][2]-x['bbox'][0])*(x['bbox'][3]-x['bbox'][1]))[-1] # only use the maximum face
         landmark = face_info['kps']
-        id_embed = extract_arcface_bgr_embedding(id_image_cv2, landmark, arcface_model)
-        id_embed = id_embed.clone().unsqueeze(0).float().to(device)
+        id_embed = extract_arcface_bgr_embedding(id_image_cv2, landmark, arcface_model, device=device)
+        id_embed = id_embed.clone().unsqueeze(0).float()
         id_embed = id_embed.reshape([1, -1, 512])
         id_embed = id_embed.to(device=device, dtype=torch.bfloat16)
         with torch.no_grad():
